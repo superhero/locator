@@ -1,0 +1,25 @@
+{
+  "name": "@superhero/locator",
+  "version": "4.0.0",
+  "description": "Service locator to locate services by defined locator pattern or exported module",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@superhero/path-resolver": "^4.0.0"
+  },
+  "scripts": {
+    "test": "node --trace-warnings --test --experimental-test-coverage"
+  },
+  "author": {
+    "name": "Erik Landvall",
+    "email": "erik@landvall.se"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/superhero/locator"
+  }
+}
