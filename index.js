@@ -345,7 +345,8 @@ export class Locator  extends Map
   {
     const files = await fs.readdir(dirpath)
 
-    for(const file of ['locator.js', 'index.js'])
+    for(const file of [ 'locator.js', 'locator.mjs', 'locator.cjs', 
+                        'index.js',   'index.mjs',   'index.cjs' ])
     {
       if(files.includes(file))
       {
@@ -436,11 +437,15 @@ export default new class LocatorProxy
 {
   constructor()
   {
-    const 
+    const
       pathResolver  = new PathResolver(),
       locator       = new Locator(pathResolver)
 
     return new Proxy(locator.locate.bind(locator),
-      { get: (_, key) => locator[key] && locator[key].bind(locator) })
+    {
+      get: (_, key) => 'function' === typeof locator[key]
+                     ? locator[key].bind(locator) 
+                     : locator[key] 
+    })
   }
 }

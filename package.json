@@ -1,6 +1,6 @@
 {
   "name": "@superhero/locator",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Service locator to locate services by defined locator pattern or exported module",
   "main": "index.js",
   "license": "MIT",
