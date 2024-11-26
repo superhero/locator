@@ -8,7 +8,8 @@ A Node.js service locator module, designed to manage dependency injections for s
 - **Eager Loading**: Preload services in bulk for faster access, normally done at bootstrap.
 - **Lazy Loading**: Dynamically load services when they are required, and keep them accessible.
 - **Wildcard Service Paths**: Resolve services using wildcard paths, to ease the service registry.
-- **Locator**: Support different locator implementations.
+- **Locator**: Locate a service using different implementation alternatives.
+- **Destructor**: Support for a graceful release of services resources.
 - **Error Handling**: Provides detailed errors with specific error codes for different types of errors.
 
 ## Installation
@@ -50,7 +51,7 @@ const serviceB = locator.locate('serviceB');
 ```javascript
 await locator.eagerload({ 'services/*': './services/*.js' });
 const serviceA = locator.locate('services/serviceA');
-const serviceA = locator.locate('services/serviceB');
+const serviceB = locator.locate('services/serviceB');
 ```
 
 ### Using Locators
@@ -89,6 +90,55 @@ export default class Foo {
 }
 ```
 
+### Destructors
+
+Services can include a `destructor` method to clean up resources during shutdown or unloading. The locator will automatically call the `destructor` method for all services when the `destruct` method is invoked.
+
+#### Example: Using Destructors
+
+Define a service with a `destructor` method:
+
+```javascript
+export default new class {
+  destructor() {
+    console.log('Service is being destructed.');
+  }
+}
+```
+
+Destruct all loaded services:
+
+```javascript
+await locator.eagerload({
+  serviceA: './services/serviceA.js',
+  serviceB: './services/serviceB.js',
+});
+
+await locator.destruct();
+```
+
+#### Error Handling During Destruction
+
+If a service's `destructor` throws an error, the locator will aggregate these errors and throw a comprehensive error with details.
+
+Example:
+
+```javascript
+try {
+  await locator.destruct();
+} catch (error) {
+  console.error(error.code); // 'E_LOCATOR_DESTRUCT'
+  console.error(error.cause); // Array of errors for each failed service destructor
+}
+```
+
+Error Codes:
+
+- **E_LOCATOR_DESTRUCT**: Thrown when one or more destructors fail.
+- **E_LOCATOR_DESTRUCT_SERVICE_DESTRUCTOR**: Thrown for individual service destructors that fail.
+
+---
+
 ### Error Handling
 
 The module provides descriptive errors with unique codes to help debug common issues.
@@ -99,6 +149,8 @@ The module provides descriptive errors with unique codes to help debug common is
 - **E_LOCATOR_INVALID_SERVICE_MAP**: Thrown for invalid service map formats.
 - **E_LOCATOR_SERVICE_UNRESOLVABLE**: Thrown when a service path cannot be resolved.
 - **E_LOCATOR_INVALID_PATH**: Thrown for invalid or mismatched wildcard paths.
+- **E_LOCATOR_DESTRUCT**: Thrown when one or more destructors fail.
+- **E_LOCATOR_DESTRUCT_SERVICE_DESTRUCTOR**: Thrown for individual service destructors that fail.
 
 Example:
 
@@ -109,6 +161,8 @@ try {
   console.error(error.code, error.message);
 }
 ```
+
+---
 
 ## Running Tests
 
@@ -123,52 +177,59 @@ node test
 ```
 ▶ @superhero/locator
   ▶ Lazyload
-    ✔ Lazyload a service (6.432655ms)
-    ✔ Lazyload same service multiple times (1.221084ms)
-  ✔ Lazyload (8.843422ms)
+    ✔ Lazyload a service (6.182643ms)
+    ✔ Lazyload same service multiple times (2.011848ms)
+  ✔ Lazyload (9.551619ms)
 
   ▶ Eagerload
-    ✔ Eagerload a service (3.860612ms)
-    ✔ Eagerload the same service multiple times (0.931989ms)
-    ✔ Eagerload multiple services by a collection definition (3.273159ms)
-    ✔ Eagerload through the bootstrap method (1.58633ms)
-    ✔ Multiple services by a service path map (1.283204ms)
-    ✔ Nested wildcard service (6.668795ms)
-    ✔ Specific file by a wildcard service path map (1.218867ms)
+    ✔ Eagerload a service (3.009513ms)
+    ✔ Eagerload the same service multiple times (0.966443ms)
+    ✔ Eagerload multiple services by a collection definition (2.253287ms)
+    ✔ Eagerload through the bootstrap method (1.2612ms)
+    ✔ Multiple services by a service path map (1.424574ms)
+    ✔ Nested wildcard service (5.031199ms)
+    ✔ Specific file by a wildcard service path map (1.335819ms)
     ▶ Using a locator
-      ✔ Locator file (4.056506ms)
-      ✔ Exported locate function (3.817437ms)
-      ✔ Exported locator class (6.962377ms)
-      ✔ Static self locator (1.964958ms)
-      ✔ When the dependent service is loaded after the located service (1.336269ms)
-    ✔ Using a locator (18.6873ms)
-  ✔ Eagerload (38.283536ms)
+      ✔ Locator file (6.458225ms)
+      ✔ Exported locate function (4.934864ms)
+      ✔ Exported locator class (3.30381ms)
+      ✔ Static self locator (4.063844ms)
+      ✔ When the dependent service is loaded after the located service (1.632379ms)
+    ✔ Using a locator (20.914621ms)
+  ✔ Eagerload (37.008545ms)
 
   ▶ Rejects
-    ✔ Lazyload a nonexistent path (4.286185ms)
-    ✔ Lazyload a nonexistent path (0.736062ms)
-    ✔ Directory path with no index or locator file (0.943326ms)
-    ✔ Invalid wildcard path (0.904292ms)
-    ✔ File path is used as a directory path (1.394164ms)
-    ✔ Missmatched wildcard count (0.717327ms)
-    ✔ Invalid service map types (0.736322ms)
-    ✔ Noneexisting path (3.11004ms)
-    ✔ Invalid wildcard path (1.181704ms)
-    ✔ Throws error for attempting to locate a nonexisting service (0.409472ms)
-  ✔ Rejects (15.177013ms)
-  ✔ Locate using the locator as the locate method (2.391365ms)
-✔ @superhero/locator (87.618494ms)
+    ✔ Lazyload a nonexistent path (2.238264ms)
+    ✔ Lazyload a nonexistent path (0.615457ms)
+    ✔ Directory path with no index or locator file (1.06324ms)
+    ✔ Invalid wildcard path (0.846293ms)
+    ✔ File path is used as a directory path (2.753747ms)
+    ✔ Missmatched wildcard count (0.708828ms)
+    ✔ Invalid service map types (1.416482ms)
+    ✔ Noneexisting path (3.45896ms)
+    ✔ Invalid wildcard path (1.337589ms)
+    ✔ Throws error for attempting to locate a nonexisting service (0.577147ms)
+  ✔ Rejects (15.783164ms)
 
-tests 25
-pass 25
+  ▶ Destruct
+    ✔ Successfully destructs a service (2.788925ms)
+    ✔ Throws if a destructor of a service fails to destruct (2.770051ms)
+  ✔ Destruct (5.77378ms)
+
+  ✔ Locate using the locator as the locate method (1.394766ms)
+✔ @superhero/locator (95.142692ms)
+
+tests 27
+suites 6
+pass 27
 
 ----------------------------------------------------------------------------------------
 file            | line % | branch % | funcs % | uncovered lines
 ----------------------------------------------------------------------------------------
-index.js        |  95.02 |    93.62 |  100.00 | 236-238 364-368 382-385 399-404 420-423
-index.test.js   | 100.00 |   100.00 |   97.83 | 
+index.js        |  95.53 |    94.12 |  100.00 | 286-288 414-418 432-435 449-454 470-473
+index.test.js   | 100.00 |   100.00 |   98.04 | 
 ----------------------------------------------------------------------------------------
-all files       |  97.18 |    95.74 |   98.46 | 
+all files       |  97.42 |    96.10 |   98.63 | 
 ----------------------------------------------------------------------------------------
 ```
 

@@ -19,7 +19,10 @@ suite('@superhero/locator', () =>
     locatorFile             = `${locatorsDir}/locator.js`,
     exportedLocateFunction  = `${locatorsDir}/example-exported-locate.js`,
     exportedLocatorClass    = `${locatorsDir}/example-exported-locator.js`,
-    selfLocator             = `${locatorsDir}/example-self-locator.js`
+    selfLocator             = `${locatorsDir}/example-self-locator.js`,
+    destructorsDir          = `${testDir}/destructors`,
+    destructorFileSuccess   = `${destructorsDir}/success.js`,
+    destructorFileFailing   = `${destructorsDir}/failing.js`
 
   let locator
 
@@ -29,6 +32,7 @@ suite('@superhero/locator', () =>
 
     await fs.mkdir(nestedServiceDir,  { recursive: true })
     await fs.mkdir(locatorsDir,       { recursive: true })
+    await fs.mkdir(destructorsDir,    { recursive: true })
 
     // Create mock service files
     await fs.writeFile(serviceFileA,            'export default {}')
@@ -39,6 +43,8 @@ suite('@superhero/locator', () =>
     await fs.writeFile(selfLocator,             'export default class Foo { static locate(locator) { return new Foo(locator.locate("some-service")) } constructor(service) { this.service = service } }')
     await fs.writeFile(exportedLocatorClass,    'export class Locator { locate(locator) { return locator.locate("some-service") } }')
     await fs.writeFile(exportedLocateFunction,  'export function locate(locator) { return locator.locate("some-service") }')
+    await fs.writeFile(destructorFileSuccess,   'export default new class { destructor() { this.destructed = true } }')
+    await fs.writeFile(destructorFileFailing,   'export default new class { destructor() { throw new Error("Failed to destruct") } }')
   })
 
   after(async () => 
@@ -325,6 +331,25 @@ suite('@superhero/locator', () =>
         () => locator.locate('nonexistentService'),
         (error) => error.code === 'E_LOCATOR_LOCATE',
         'Should throw a locate error')
+    })
+  })
+
+  suite('Destruct', () =>
+  {
+    test('Successfully destructs a service', async () => 
+    {
+      const service = await locator.lazyload(destructorFileSuccess)
+      await locator.destruct()
+      assert.ok(service.destructed, 'Should have destructed the service')
+    })
+  
+    test('Throws if a destructor of a service fails to destruct', async () => 
+    {
+      await locator.eagerload(destructorFileFailing)
+      await assert.rejects(
+        () => locator.destruct(),
+        (error) => error.code === 'E_LOCATOR_DESTRUCT',
+        'Should reject with a destruct error')
     })
   })
 

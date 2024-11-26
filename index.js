@@ -74,6 +74,56 @@ export default class Locator extends Map
     await this.#iterateEagerload(expandedServiceMap)
   }
 
+  async destruct()
+  {
+    const destructions = []
+
+    for(const [ name, service ] of this.entries())
+    {
+      if('function' === typeof service.destructor)
+      {
+        destructions.push((async () => 
+        {
+          try
+          {
+            const result = await service.destructor()
+            return { name, result }
+          }
+          catch(reason)
+          {
+            return { name, reason }
+          }
+        })())
+      }
+    }
+
+    await this.#validateDestructions(destructions)
+  }
+
+  async #validateDestructions(destructions)
+  {
+    const rejected = []
+
+    for(const { name, reason } of await Promise.all(destructions))
+    {
+      if(reason)
+      {
+        const error = new Error(`Destructor for service ${name} failed`)
+        error.code  = 'E_LOCATOR_DESTRUCT_SERVICE_DESTRUCTOR'
+        error.cause = reason
+        rejected.push(error)
+      }
+    }
+
+    if(rejected.length)
+    {
+      const error = new Error(`Destructor for ${rejected.length}/${destructions.length} services was rejected`)
+      error.code  = 'E_LOCATOR_DESTRUCT'
+      error.cause = rejected
+      throw error
+    }
+  }
+
   /**
    * Normalises the service map to an object if it's a string or an array.
    * 
