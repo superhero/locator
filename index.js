@@ -2,15 +2,9 @@ import fs           from 'node:fs/promises'
 import path         from 'node:path'
 import PathResolver from '@superhero/path-resolver'
 
-export class Locator  extends Map
+export default class Locator extends Map
 {
-  #pathResolver
-
-  constructor(pathResolver)
-  {
-    super()
-    this.#pathResolver = pathResolver
-  }
+  pathResolver = new PathResolver()
 
   async bootstrap(serviceMap)
   {
@@ -320,7 +314,7 @@ export class Locator  extends Map
     const
       resolveFile       = this.#resolveFile.bind(this),
       resolveDirectory  = this.#resolveDirectory.bind(this),
-      service           = await this.#pathResolver.resolve(servicePath, resolveFile, resolveDirectory)
+      service           = await this.pathResolver.resolve(servicePath, resolveFile, resolveDirectory)
 
     if(service)
     {
@@ -433,14 +427,11 @@ export class Locator  extends Map
 /**
  * Makes the Loacator instance available as a callable function.
  */
-export default new class LocatorProxy
+export class Locate
 {
   constructor()
   {
-    const
-      pathResolver  = new PathResolver(),
-      locator       = new Locator(pathResolver)
-
+    const locator = new Locator()
     return new Proxy(locator.locate.bind(locator),
     {
       get: (_, key) => 'function' === typeof locator[key]

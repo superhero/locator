@@ -30,7 +30,7 @@ import locator from '@superhero/locator';
 ### Lazyload a Service
 
 ```javascript
-await locator.lazyload('foobar', '/absolute/path/to/service.js');
+await locator.lazyload('foobar', './service.js');
 const foobar = locator.locate('foobar');
 ```
 
@@ -38,8 +38,8 @@ const foobar = locator.locate('foobar');
 
 ```javascript
 await locator.eagerload({
-  serviceA: '/absolute/path/to/services/serviceA.js',
-  serviceB: '/absolute/path/to/services/serviceB.js',
+  serviceA: './services/serviceA.js',
+  serviceB: './services/serviceB.js',
 });
 const serviceA = locator.locate('serviceA');
 const serviceB = locator.locate('serviceB');
@@ -48,7 +48,7 @@ const serviceB = locator.locate('serviceB');
 ### Using a Wildcard Service Path
 
 ```javascript
-await locator.eagerload({ 'services/*': '/absolute/path/to/services/*.js' });
+await locator.eagerload({ 'services/*': './services/*.js' });
 const serviceA = locator.locate('services/serviceA');
 const serviceA = locator.locate('services/serviceB');
 ```
@@ -165,10 +165,10 @@ pass 25
 ----------------------------------------------------------------------------------------
 file            | line % | branch % | funcs % | uncovered lines
 ----------------------------------------------------------------------------------------
-index.js        |  95.07 |    94.68 |  100.00 | 242-244 369-373 387-390 404-409 425-428
+index.js        |  95.02 |    93.62 |  100.00 | 236-238 364-368 382-385 399-404 420-423
 index.test.js   | 100.00 |   100.00 |   97.83 | 
 ----------------------------------------------------------------------------------------
-all files       |  97.17 |    96.45 |   98.48 | 
+all files       |  97.18 |    95.74 |   98.46 | 
 ----------------------------------------------------------------------------------------
 ```
 

@@ -1,13 +1,14 @@
-import assert   from 'node:assert'
-import path     from 'node:path'
-import fs       from 'node:fs/promises'
-import locator  from '@superhero/locator'
+import assert     from 'node:assert'
+import path       from 'node:path'
+import fs         from 'node:fs/promises'
+import Locator    from '@superhero/locator'
+import { Locate } from '@superhero/locator'
 import { before, after, suite, test, afterEach } from 'node:test'
 
 suite('@superhero/locator', () => 
 {
   const
-    testDir                 = path.resolve('./test/mock'),
+    testDir                 = './test',
     servicesDir             = `${testDir}/services`,
     serviceFileA            = `${servicesDir}/serviceA.js`,
     serviceFileB            = `${servicesDir}/serviceB.js`,
@@ -20,8 +21,12 @@ suite('@superhero/locator', () =>
     exportedLocatorClass    = `${locatorsDir}/example-exported-locator.js`,
     selfLocator             = `${locatorsDir}/example-self-locator.js`
 
+  let locator
+
   before(async () =>
   {
+    locator = new Locator()
+
     await fs.mkdir(nestedServiceDir,  { recursive: true })
     await fs.mkdir(locatorsDir,       { recursive: true })
 
@@ -325,7 +330,8 @@ suite('@superhero/locator', () =>
 
   test('Locate using the locator as the locate method', async () => 
   {
-    await locator.eagerload({ 'service': serviceFileA })
-    assert.ok(locator('service'), 'Should be able to locate loaded services')
+    const locate = new Locate()
+    await locate.eagerload({ 'service': serviceFileA })
+    assert.ok(locate('service'), 'Should be able to locate loaded services')
   })
 })
