@@ -2,7 +2,36 @@ import fs           from 'node:fs/promises'
 import path         from 'node:path'
 import PathResolver from '@superhero/path-resolver'
 
-export default class Locator extends Map
+/**
+ * Makes the Loacator instance available as a callable function.
+ */
+export default class Locate
+{
+  constructor()
+  {
+    const 
+      locator = new Locator(),
+      locate  = locator.locate.bind(locator)
+
+    return new Proxy(locate,
+    {
+      set                       : (_, key, value) => locator.set(key, value),
+      get                       : (_, key) => locator[key]?.bind?.(locator) ?? locator[key],
+      has                       : (_, key) => locator.has(key),
+      deleteProperty            : (_, key) => locator.delete(key),
+      ownKeys                   : (_) => [ ...locator.keys() ],
+
+      defineProperty            : (_, key, descriptor) => Object.defineProperty(locator, key, descriptor),
+      getOwnPropertyDescriptor  : (_, key) => Object.getOwnPropertyDescriptor(locator, key),
+      preventExtensions         : (_) => Object.preventExtensions(locator),
+      isExtensible              : (_) => Object.isExtensible(locator),
+      getPrototypeOf            : (_) => Object.getPrototypeOf(locator),
+      setPrototypeOf            : (_, prototype) => Object.setPrototypeOf(locator, prototype),
+    })
+  }
+}
+
+export class Locator extends Map
 {
   pathResolver = new PathResolver()
 
@@ -471,22 +500,5 @@ export default class Locator extends Map
     const error = new TypeError('Could not resolve locator from imported module')
     error.code  = 'E_LOCATOR_UNKNOWN_LOCATOR'
     throw error
-  }
-}
-
-/**
- * Makes the Loacator instance available as a callable function.
- */
-export class Locate
-{
-  constructor()
-  {
-    const locator = new Locator()
-    return new Proxy(locator.locate.bind(locator),
-    {
-      get: (_, key) => 'function' === typeof locator[key]
-                     ? locator[key].bind(locator) 
-                     : locator[key] 
-    })
   }
 }

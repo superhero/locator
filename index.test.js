@@ -1,5 +1,4 @@
 import assert     from 'node:assert'
-import path       from 'node:path'
 import fs         from 'node:fs/promises'
 import Locator    from '@superhero/locator'
 import { Locate } from '@superhero/locator'
