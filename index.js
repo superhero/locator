@@ -2,38 +2,24 @@ import fs           from 'node:fs/promises'
 import path         from 'node:path'
 import PathResolver from '@superhero/path-resolver'
 
-/**
- * Makes the Loacator instance available as a callable function.
- */
-export default class Locate
-{
-  constructor()
-  {
-    const 
-      locator = new Locator(),
-      locate  = locator.locate.bind(locator)
-
-    return new Proxy(locate,
-    {
-      set                       : (_, key, value) => locator.set(key, value),
-      get                       : (_, key) => locator[key]?.bind?.(locator) ?? locator[key],
-      has                       : (_, key) => locator.has(key),
-      deleteProperty            : (_, key) => locator.delete(key),
-      ownKeys                   : (_) => [ ...locator.keys() ],
-
-      defineProperty            : (_, key, descriptor) => Object.defineProperty(locator, key, descriptor),
-      getOwnPropertyDescriptor  : (_, key) => Object.getOwnPropertyDescriptor(locator, key),
-      preventExtensions         : (_) => Object.preventExtensions(locator),
-      isExtensible              : (_) => Object.isExtensible(locator),
-      getPrototypeOf            : (_) => Object.getPrototypeOf(locator),
-      setPrototypeOf            : (_, prototype) => Object.setPrototypeOf(locator, prototype),
-    })
-  }
-}
-
-export class Locator extends Map
+export default class Locator extends Map
 {
   pathResolver = new PathResolver()
+  #locateProxy = new Proxy(() => {},
+  {
+    set             : (...arg) => this.set(arg[1], arg[2]),
+    apply           : (...arg) => this.locate.apply(this, arg[2]),
+    get             : (_, key) => this[key]?.bind?.(this) ?? this[key] ?? this.get(key),
+    has             : (_, key) => this.has(key),
+    deleteProperty  : (_, key) => this.delete(key),
+    ownKeys         : (_) => [ ...this.keys() ],
+  })
+
+  constructor(...args)
+  {
+    super(...args)
+    return this.#locateProxy
+  }
 
   async bootstrap(serviceMap)
   {
@@ -449,7 +435,7 @@ export class Locator extends Map
       // If the imported module has an exported locate method, then we assume 
       // that it's a service locator, and we call the locate method with this 
       // locator as argument.
-      return imported.locate(this)
+      return imported.locate(this.#locateProxy)
     }
 
     // If the imported module has a locator property, then we assume that 
@@ -460,7 +446,7 @@ export class Locator extends Map
       {
         // If the imported module has a locator property with a locate method, 
         // then we assume that it's a service locator.
-        return imported.Locator.locate(this)
+        return imported.Locator.locate(this.#locateProxy)
       }
 
       if('function' === typeof imported.Locator
@@ -473,7 +459,7 @@ export class Locator extends Map
         // a service locator. We instanciate the class, and then call the locate 
         // method on the instance with this locator as the argument.
         const locator = new imported.Locator()
-        return locator.locate(this)
+        return locator.locate(this.#locateProxy)
       }
 
       const error = new TypeError('Unresolvable exported "Locator" property')
@@ -488,7 +474,7 @@ export class Locator extends Map
       {
         // If the imported default module has a locate method, then we assume that it's
         // a service locator.
-        return imported.default.locate(this)
+        return imported.default.locate(this.#locateProxy)
       }
 
       // If the imported module can not be resolved as a service locator, and there is 
@@ -500,5 +486,10 @@ export class Locator extends Map
     const error = new TypeError('Could not resolve locator from imported module')
     error.code  = 'E_LOCATOR_UNKNOWN_LOCATOR'
     throw error
+  }
+
+  get [Symbol.toStringTag]()
+  {
+    return 'Function'
   }
 }
