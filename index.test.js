@@ -1,7 +1,7 @@
-import assert     from 'node:assert'
-import fs         from 'node:fs/promises'
-import Locator    from '@superhero/locator'
-import { Locate } from '@superhero/locator'
+import assert       from 'node:assert'
+import fs           from 'node:fs/promises'
+import Locate       from '@superhero/locator'
+import { Locator }  from '@superhero/locator'
 import { before, after, suite, test, afterEach } from 'node:test'
 
 suite('@superhero/locator', () => 
