@@ -1,6 +1,6 @@
 {
   "name": "@superhero/locator",
-  "version": "4.1.2",
+  "version": "4.1.3",
   "description": "Service locator to locate services by defined locator patterns",
   "keywords": [
     "service manager",

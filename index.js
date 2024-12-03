@@ -245,7 +245,7 @@ export default class Locator extends Map
     }
     else
     {
-      for (const dirent of await this.#readDirentsByPath(partialPath))
+      for (const dirent of await this.#readDirentsByPath(partialPath, true))
       {
         let currentName, currentPath
 
@@ -263,7 +263,7 @@ export default class Locator extends Map
         }
         else if(dirent.isDirectory())
         {
-          if(splitPath[depth][0] !== '/')
+          if(splitPath[depth][0] !== path.sep)
           {
             continue
           }
@@ -282,11 +282,16 @@ export default class Locator extends Map
     }
   }
 
-  async #readDirentsByPath(path)
+  async #readDirentsByPath(dirpath, withFileTypes)
   {
     try
     {
-      return await fs.readdir(path, { withFileTypes:true })
+      if(dirpath.startsWith('.'))
+      {
+        dirpath = path.normalize(path.join(this.pathResolver.basePath, dirpath))
+      }
+
+      return await fs.readdir(dirpath, { withFileTypes })
     }
     catch(reason)
     {
@@ -294,14 +299,14 @@ export default class Locator extends Map
       {
         case 'ENOENT':
         {
-          const error = new TypeError(`Could not find directory "${path}"`)
+          const error = new TypeError(`Could not find directory "${dirpath}"`)
           error.code  = 'E_LOCATOR_INVALID_PATH'
           error.cause = reason
           throw error
         }
         case 'ENOTDIR':
         {
-          const error = new TypeError(`Expecting the path "${path}" to be a directory`)
+          const error = new TypeError(`Expecting the path "${dirpath}" to be a directory`)
           error.code  = 'E_LOCATOR_INVALID_PATH'
           error.cause = reason
           throw error
@@ -411,7 +416,7 @@ export default class Locator extends Map
 
   async #resolveDirectory(dirpath)
   {
-    const files = await fs.readdir(dirpath)
+    const files = await this.#readDirentsByPath(dirpath)
 
     for(const file of [ 'locator.js', 'locator.mjs', 'locator.cjs', 
                         'index.js',   'index.mjs',   'index.cjs' ])

@@ -131,8 +131,8 @@ suite('@superhero/locator', () =>
       {
         const serviceMap =
         { 
-          'some-service'                  : `${serviceFileA}`,
-          'locator-located-some-service'  : `${locatorsDir}`,
+          'some-service'                  : serviceFileA,
+          'locator-located-some-service'  : locatorsDir,
         }
     
         await locate.eagerload(serviceMap)
