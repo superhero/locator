@@ -5,7 +5,7 @@ A Node.js service locator module, designed to manage dependency injections for s
 
 ## Features
 
-- **Eager Loading**: Preload services in bulk for faster access, normally done at bootstrap.
+- **Eager Loading**: Preload services in bulk for faster access, normally done at bootstrap by an application core process.
 - **Lazy Loading**: Dynamically load services when they are required, and keep them accessible.
 - **Wildcard Service Paths**: Resolve services using wildcard paths, to ease the service registry.
 - **Locator**: Locate a service using different implementation alternatives.
@@ -31,8 +31,9 @@ import locator from '@superhero/locator';
 ### Lazyload a Service
 
 ```javascript
-await locator.lazyload('foobar', './service.js');
-const foobar = locator.locate('foobar');
+const foobar1 = await locator.lazyload('foobar', './service.js');
+const foobar2 = locator.locate('foobar');
+// foobar1 === foobar2
 ```
 
 ### Eagerload Services
@@ -43,7 +44,7 @@ await locator.eagerload({
   serviceB: './services/serviceB.js',
 });
 const serviceA = locator.locate('serviceA');
-const serviceB = locator.locate('serviceB');
+const serviceB = locator('serviceB'); // optional interface to locate
 ```
 
 ### Using a Wildcard Service Path
@@ -177,60 +178,58 @@ node test
 ```
 ▶ @superhero/locator
   ▶ Lazyload
-    ✔ Lazyload a service (6.182643ms)
-    ✔ Lazyload same service multiple times (2.011848ms)
-  ✔ Lazyload (9.551619ms)
-
+    ✔ Lazyload a service (4.310345ms)
+    ✔ Lazyload same service multiple times (2.515993ms)
+  ✔ Lazyload (8.097712ms)
+  
   ▶ Eagerload
-    ✔ Eagerload a service (3.009513ms)
-    ✔ Eagerload the same service multiple times (0.966443ms)
-    ✔ Eagerload multiple services by a collection definition (2.253287ms)
-    ✔ Eagerload through the bootstrap method (1.2612ms)
-    ✔ Multiple services by a service path map (1.424574ms)
-    ✔ Nested wildcard service (5.031199ms)
-    ✔ Specific file by a wildcard service path map (1.335819ms)
+    ✔ Eagerload a service (2.33042ms)
+    ✔ Eagerload the same service multiple times (0.808976ms)
+    ✔ Eagerload multiple services by a collection definition (2.561154ms)
+    ✔ Multiple services by a service path map (1.712905ms)
+    ✔ Nested wildcard service (3.749195ms)
+    ✔ Specific file by a wildcard service path map (2.366386ms)
     ▶ Using a locator
-      ✔ Locator file (6.458225ms)
-      ✔ Exported locate function (4.934864ms)
-      ✔ Exported locator class (3.30381ms)
-      ✔ Static self locator (4.063844ms)
-      ✔ When the dependent service is loaded after the located service (1.632379ms)
-    ✔ Using a locator (20.914621ms)
-  ✔ Eagerload (37.008545ms)
+      ✔ Locator file (4.283149ms)
+      ✔ Exported locate function (2.031081ms)
+      ✔ Exported locator class (6.249943ms)
+      ✔ Static self locator (2.692719ms)
+      ✔ When the dependent service is loaded after the located service (1.298828ms)
+    ✔ Using a locator (17.049017ms)
+  ✔ Eagerload (31.504112ms)
 
   ▶ Rejects
-    ✔ Lazyload a nonexistent path (2.238264ms)
-    ✔ Lazyload a nonexistent path (0.615457ms)
-    ✔ Directory path with no index or locator file (1.06324ms)
-    ✔ Invalid wildcard path (0.846293ms)
-    ✔ File path is used as a directory path (2.753747ms)
-    ✔ Missmatched wildcard count (0.708828ms)
-    ✔ Invalid service map types (1.416482ms)
-    ✔ Noneexisting path (3.45896ms)
-    ✔ Invalid wildcard path (1.337589ms)
-    ✔ Throws error for attempting to locate a nonexisting service (0.577147ms)
-  ✔ Rejects (15.783164ms)
+    ✔ Lazyload a nonexistent path (3.149196ms)
+    ✔ Lazyload a nonexistent path (0.893349ms)
+    ✔ Directory path with no index or locator file (1.280318ms)
+    ✔ Invalid wildcard path (0.720293ms)
+    ✔ File path is used as a directory path (2.201317ms)
+    ✔ Missmatched wildcard count (0.585756ms)
+    ✔ Invalid service map types (1.048835ms)
+    ✔ Noneexisting path (1.978403ms)
+    ✔ Invalid wildcard path (2.568421ms)
+    ✔ Throws error for attempting to locate a nonexisting service (0.319932ms)
+  ✔ Rejects (15.415578ms)
 
   ▶ Destruct
-    ✔ Successfully destructs a service (2.788925ms)
-    ✔ Throws if a destructor of a service fails to destruct (2.770051ms)
-  ✔ Destruct (5.77378ms)
+    ✔ Successfully destructs a service (3.725305ms)
+    ✔ Throws if a destructor of a service fails to destruct (2.483105ms)
+  ✔ Destruct (6.449439ms)
+  ✔ Locate using the locator method (1.057447ms)
+✔ @superhero/locator (84.717661ms)
 
-  ✔ Locate using the locator as the locate method (1.394766ms)
-✔ @superhero/locator (95.142692ms)
-
-tests 27
+tests 26
 suites 6
-pass 27
+pass 26
 
-----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------
 file            | line % | branch % | funcs % | uncovered lines
-----------------------------------------------------------------------------------------
-index.js        |  95.53 |    94.12 |  100.00 | 286-288 414-418 432-435 449-454 470-473
-index.test.js   | 100.00 |   100.00 |   98.04 | 
-----------------------------------------------------------------------------------------
-all files       |  97.42 |    96.10 |   98.63 | 
-----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------
+index.js        |  94.99 |    93.20 |   78.57 | 23-25 310-312 438-442 456-459 473-478 494-497
+index.test.js   | 100.00 |   100.00 |   98.00 | 
+----------------------------------------------------------------------------------------------
+all files       |  97.04 |    95.45 |   91.03 | 
+----------------------------------------------------------------------------------------------
 ```
 
 ---

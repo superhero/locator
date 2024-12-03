@@ -96,20 +96,6 @@ suite('@superhero/locator', () =>
       assert.ok(locate(serviceFileA), 'Should be able to locate serviceFileA')
       assert.ok(locate(serviceFileB), 'Should be able to locate serviceFileB')
     })
-  
-    test('Eagerload through the bootstrap method', async () => 
-    {
-      const serviceMap =
-      {
-        'serviceA': serviceFileA,
-        'serviceB': serviceFileB,
-      }
-  
-      await locate.bootstrap(serviceMap)
-  
-      assert.ok(locate('serviceA'), 'Should be able to locate serviceA')
-      assert.ok(locate('serviceB'), 'Should be able to locate serviceB')
-    })
 
     test('Multiple services by a service path map', async () => 
     {

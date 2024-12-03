@@ -15,15 +15,24 @@ export default class Locator extends Map
     ownKeys         : (_) => [ ...this.keys() ],
   })
 
+  /**
+   * We want the instances of this class to be identified as a function.
+   * @returns {string}
+   */
+  get [Symbol.toStringTag]()
+  {
+    return 'Function'
+  }
+
+  /**
+   * The locator is a service locator that can be used to locate services.
+   * The constructor is a proxy that makes it possible to use the locator as a
+   * function, while still exposing the instance methods described by this class.
+   */
   constructor(...args)
   {
     super(...args)
     return this.#locateProxy
-  }
-
-  async bootstrap(serviceMap)
-  {
-    await this.eagerload(serviceMap)
   }
 
   /**
@@ -82,8 +91,8 @@ export default class Locator extends Map
    */
   async eagerload(serviceMap)
   {
-    const 
-      standardizedServiceMap  = this.#normaliseServiceMap(serviceMap),
+    const
+      standardizedServiceMap  = this.normaliseServiceMap(serviceMap),
       expandedServiceMap      = await this.#expandServiceMap(standardizedServiceMap)
 
     await this.#iterateEagerload(expandedServiceMap)
@@ -145,7 +154,7 @@ export default class Locator extends Map
    * @param {string|Array|Object} serviceMap
    * @returns 
    */
-  #normaliseServiceMap(serviceMap)
+  normaliseServiceMap(serviceMap)
   {
     const serviceMapType = Object.prototype.toString.call(serviceMap)
 
@@ -486,10 +495,5 @@ export default class Locator extends Map
     const error = new TypeError('Could not resolve locator from imported module')
     error.code  = 'E_LOCATOR_UNKNOWN_LOCATOR'
     throw error
-  }
-
-  get [Symbol.toStringTag]()
-  {
-    return 'Function'
   }
 }
