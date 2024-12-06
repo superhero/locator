@@ -1,11 +1,11 @@
 {
   "name": "@superhero/locator",
-  "version": "4.1.3",
+  "version": "4.2.0",
   "description": "Service locator to locate services by defined locator patterns",
   "keywords": [
     "service manager",
     "service locator",
-    "service destructor"
+    "service destroyer"
   ],
   "main": "index.js",
   "license": "MIT",
@@ -14,7 +14,8 @@
     ".": "./index.js"
   },
   "dependencies": {
-    "@superhero/path-resolver": "^4.0.1"
+    "@superhero/path-resolver": "^4.0.1",
+    "@superhero/log": "^4.0.0"
   },
   "scripts": {
     "test": "node --trace-warnings --test --experimental-test-coverage"

@@ -178,60 +178,60 @@ node test
 ```
 ▶ @superhero/locator
   ▶ Lazyload
-    ✔ Lazyload a service (4.376028ms)
-    ✔ Lazyload same service multiple times (1.193954ms)
-  ✔ Lazyload (6.493337ms)
+    ✔ Lazyload a service (4.828123ms)
+    ✔ Lazyload same service multiple times (2.175617ms)
+  ✔ Lazyload (7.965349ms)
   
   ▶ Eagerload
-    ✔ Eagerload a service (4.079377ms)
-    ✔ Eagerload the same service multiple times (0.822597ms)
-    ✔ Eagerload multiple services by a collection definition (2.390115ms)
-    ✔ Multiple services by a service path map (1.384723ms)
-    ✔ Nested wildcard service (3.740905ms)
-    ✔ Specific file by a wildcard service path map (3.859331ms)
+    ✔ Eagerload a service (2.271103ms)
+    ✔ Eagerload the same service multiple times (0.933762ms)
+    ✔ Eagerload multiple services by a collection definition (2.389402ms)
+    ✔ Multiple services by a service path map (1.368324ms)
+    ✔ Nested wildcard service (6.644221ms)
+    ✔ Specific file by a wildcard service path map (2.014441ms)
 
     ▶ Using a locator
-      ✔ Locator file (3.278237ms)
-      ✔ Exported locate function (3.117623ms)
-      ✔ Exported locator class (2.106652ms)
-      ✔ Static self locator (4.963107ms)
-      ✔ When the dependent service is loaded after the located service (1.3365ms)
-    ✔ Using a locator (15.338614ms)
-  ✔ Eagerload (32.620482ms)
+      ✔ Locator file (3.275955ms)
+      ✔ Exported locate function (2.851036ms)
+      ✔ Exported locator class (4.530722ms)
+      ✔ Static self locator (2.690786ms)
+      ✔ When the dependent service is loaded after the located service (1.780561ms)
+    ✔ Using a locator (15.620721ms)
+  ✔ Eagerload (32.099219ms)
 
   ▶ Rejects
-    ✔ Lazyload a nonexistent path (2.912138ms)
-    ✔ Lazyload a nonexistent path (0.656041ms)
-    ✔ Directory path with no index or locator file (1.361741ms)
-    ✔ Invalid wildcard path (0.780617ms)
-    ✔ File path is used as a directory path (0.621352ms)
-    ✔ Missmatched wildcard count (0.318685ms)
-    ✔ Invalid service map types (0.757284ms)
-    ✔ Noneexisting path (1.381143ms)
-    ✔ Invalid wildcard path (0.771358ms)
-    ✔ Throws error for attempting to locate a nonexisting service (2.242825ms)
-  ✔ Rejects (12.485229ms)
+    ✔ Lazyload a nonexistent path (2.06964ms)
+    ✔ Lazyload a nonexistent path (1.023868ms)
+    ✔ Directory path with no index or locator file (1.619045ms)
+    ✔ Invalid wildcard path (0.7834ms)
+    ✔ File path is used as a directory path (0.638767ms)
+    ✔ Missmatched wildcard count (0.423624ms)
+    ✔ Invalid service map types (0.973865ms)
+    ✔ Noneexisting path (3.930104ms)
+    ✔ Invalid wildcard path (2.209812ms)
+    ✔ Throws error for attempting to locate a nonexisting service (0.415812ms)
+  ✔ Rejects (14.858727ms)
 
   ▶ Destroy
-    ✔ Successfully destroys a service (6.235913ms)
-    ✔ Throws if fails to destroy a service (2.991283ms)
-  ✔ Destroy (9.57427ms)
+    ✔ Successfully destroys a service (2.558189ms)
+    ✔ Throws if fails to destroy a service (2.610999ms)
+  ✔ Destroy (5.839146ms)
 
-  ✔ Locate using the locator method (0.7178ms)
-✔ @superhero/locator (85.230119ms)
+  ✔ Locate using the locator method (0.889694ms)
+✔ @superhero/locator (90.014072ms)
 
 tests 26
 suites 6
 pass 26
 
-----------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
 file            | line % | branch % | funcs % | uncovered lines
-----------------------------------------------------------------------------------------------
-index.js        |  94.99 |    93.20 |   78.57 | 23-25 310-312 438-442 456-459 473-478 494-497
+----------------------------------------------------------------------------------------------------
+index.js        |  94.42 |    94.34 |   76.67 | 25-27 47-50 331-333 459-463 477-480 494-499 515-518
 index.test.js   | 100.00 |   100.00 |   98.00 | 
-----------------------------------------------------------------------------------------------
-all files       |  97.04 |    95.45 |   91.03 | 
-----------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+all files       |  96.66 |    96.18 |   90.00 | 
+----------------------------------------------------------------------------------------------------
 ```
 
 ---

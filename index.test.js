@@ -27,6 +27,7 @@ suite('@superhero/locator', () =>
   before(async () =>
   {
     locate = new Locate()
+    locate.log.config.mute = true
 
     await fs.mkdir(nestedServiceDir,  { recursive: true })
     await fs.mkdir(locatorsDir,       { recursive: true })
@@ -340,6 +341,7 @@ suite('@superhero/locator', () =>
   test('Locate using the locator method', async () => 
   {
     const locator = new Locate()
+    locator.log.config.mute = true
     await locator.eagerload({'service': serviceFileA})
     assert.ok(locator.locate('service'), 'Should be able to locate loaded service')
   })

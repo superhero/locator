@@ -1,9 +1,11 @@
 import fs           from 'node:fs/promises'
 import path         from 'node:path'
+import Log          from '@superhero/log'
 import PathResolver from '@superhero/path-resolver'
 
 export default class Locator extends Map
 {
+  log          = new Log({ label:'[LOCATOR]' })
   pathResolver = new PathResolver()
   #locateProxy = new Proxy(() => {},
   {
@@ -33,6 +35,18 @@ export default class Locator extends Map
   {
     super(...args)
     return this.#locateProxy
+  }
+
+  set(serviceName, service)
+  {
+    this.log.info`loaded ${serviceName}`
+    return super.set(serviceName, service)
+  }
+
+  delete(serviceName)
+  {
+    this.log.info`deleted ${serviceName}`
+    return super.delete(serviceName)
   }
 
   /**
@@ -111,10 +125,12 @@ export default class Locator extends Map
           try
           {
             const result = await service.destroy()
+            this.log.info`destroyed ${name}`
             return { name, result }
           }
           catch(reason)
           {
+            this.log.warn`failed to destroy ${name}`
             return { name, reason }
           }
         })())
@@ -340,7 +356,7 @@ export default class Locator extends Map
     }
   }
 
-  async #iterateEagerload(expandedServiceMap)
+  async #iterateEagerload(expandedServiceMap, attempt = 1)
   {
     const
       queuedServiceMap          = {},
@@ -363,7 +379,9 @@ export default class Locator extends Map
         {
           throw reason
         }
-    
+
+        this.log.warn`failed to load ${serviceName} attempt ${attempt}`
+
         queuedServiceMap[serviceName] = expandedServiceMap[serviceName]
         resolveServicePathErrors.push(reason)
     
@@ -384,7 +402,7 @@ export default class Locator extends Map
       // If there are still services that have not been resolved, then we need to
       // iterate the eagerload process again because some services may not have been 
       // able to resolve due to unresolved dependencies that now have been resolved.
-      await this.#iterateEagerload(queuedServiceMap)
+      await this.#iterateEagerload(queuedServiceMap, ++attempt)
     }
   }
 
