@@ -9,7 +9,7 @@ A Node.js service locator module, designed to manage dependency injections for s
 - **Lazy Loading**: Dynamically load services when they are required, and keep them accessible.
 - **Wildcard Service Paths**: Resolve services using wildcard paths, to ease the service registry.
 - **Locator**: Locate a service using different implementation alternatives.
-- **Destructor**: Support for a graceful release of services resources.
+- **Destroy**: Support for a graceful release of services resources.
 - **Error Handling**: Provides detailed errors with specific error codes for different types of errors.
 
 ## Installation
@@ -91,23 +91,23 @@ export default class Foo {
 }
 ```
 
-### Destructors
+### Destroy
 
-Services can include a `destructor` method to clean up resources during shutdown or unloading. The locator will automatically call the `destructor` method for all services when the `destruct` method is invoked.
+Services can include a `destroy` method to clean up resources during shutdown or unloading. The locator will automatically call the `destroy` method for all services when the `destroy` method is invoked on the service locator.
 
-#### Example: Using Destructors
+#### Example: Using Destroy
 
-Define a service with a `destructor` method:
+Define a service with a `destroy` method:
 
 ```javascript
 export default new class {
-  destructor() {
-    console.log('Service is being destructed.');
+  destroy() {
+    console.log('Service is being destroyed.');
   }
 }
 ```
 
-Destruct all loaded services:
+Destroy all loaded services:
 
 ```javascript
 await locator.eagerload({
@@ -115,28 +115,28 @@ await locator.eagerload({
   serviceB: './services/serviceB.js',
 });
 
-await locator.destruct();
+await locator.destroy();
 ```
 
-#### Error Handling During Destruction
+#### Error Handling During Destroy
 
-If a service's `destructor` throws an error, the locator will aggregate these errors and throw a comprehensive error with details.
+If a service's `destroy` method throws an error, the locator will aggregate these errors and throw a comprehensive error with details.
 
 Example:
 
 ```javascript
 try {
-  await locator.destruct();
+  await locator.destroy();
 } catch (error) {
-  console.error(error.code); // 'E_LOCATOR_DESTRUCT'
-  console.error(error.cause); // Array of errors for each failed service destructor
+  console.error(error.code); // 'E_LOCATOR_DESTROY'
+  console.error(error.cause); // Array of errors for each service taht failed to destroy
 }
 ```
 
 Error Codes:
 
-- **E_LOCATOR_DESTRUCT**: Thrown when one or more destructors fail.
-- **E_LOCATOR_DESTRUCT_SERVICE_DESTRUCTOR**: Thrown for individual service destructors that fail.
+- **E_LOCATOR_DESTROY**: Thrown when one or more destroy methods fail.
+- **E_LOCATOR_DESTROY_SERVICE**: Thrown for individual service that fail to destroy.
 
 ---
 
@@ -150,8 +150,8 @@ The module provides descriptive errors with unique codes to help debug common is
 - **E_LOCATOR_INVALID_SERVICE_MAP**: Thrown for invalid service map formats.
 - **E_LOCATOR_SERVICE_UNRESOLVABLE**: Thrown when a service path cannot be resolved.
 - **E_LOCATOR_INVALID_PATH**: Thrown for invalid or mismatched wildcard paths.
-- **E_LOCATOR_DESTRUCT**: Thrown when one or more destructors fail.
-- **E_LOCATOR_DESTRUCT_SERVICE_DESTRUCTOR**: Thrown for individual service destructors that fail.
+- **E_LOCATOR_DESTROY**: Thrown when one or more `destroy` methods fail.
+- **E_LOCATOR_DESTROY_SERVICE**: Thrown for individual service `destroy` methods that fail.
 
 Example:
 
@@ -178,45 +178,47 @@ node test
 ```
 ▶ @superhero/locator
   ▶ Lazyload
-    ✔ Lazyload a service (4.310345ms)
-    ✔ Lazyload same service multiple times (2.515993ms)
-  ✔ Lazyload (8.097712ms)
+    ✔ Lazyload a service (4.376028ms)
+    ✔ Lazyload same service multiple times (1.193954ms)
+  ✔ Lazyload (6.493337ms)
   
   ▶ Eagerload
-    ✔ Eagerload a service (2.33042ms)
-    ✔ Eagerload the same service multiple times (0.808976ms)
-    ✔ Eagerload multiple services by a collection definition (2.561154ms)
-    ✔ Multiple services by a service path map (1.712905ms)
-    ✔ Nested wildcard service (3.749195ms)
-    ✔ Specific file by a wildcard service path map (2.366386ms)
+    ✔ Eagerload a service (4.079377ms)
+    ✔ Eagerload the same service multiple times (0.822597ms)
+    ✔ Eagerload multiple services by a collection definition (2.390115ms)
+    ✔ Multiple services by a service path map (1.384723ms)
+    ✔ Nested wildcard service (3.740905ms)
+    ✔ Specific file by a wildcard service path map (3.859331ms)
+
     ▶ Using a locator
-      ✔ Locator file (4.283149ms)
-      ✔ Exported locate function (2.031081ms)
-      ✔ Exported locator class (6.249943ms)
-      ✔ Static self locator (2.692719ms)
-      ✔ When the dependent service is loaded after the located service (1.298828ms)
-    ✔ Using a locator (17.049017ms)
-  ✔ Eagerload (31.504112ms)
+      ✔ Locator file (3.278237ms)
+      ✔ Exported locate function (3.117623ms)
+      ✔ Exported locator class (2.106652ms)
+      ✔ Static self locator (4.963107ms)
+      ✔ When the dependent service is loaded after the located service (1.3365ms)
+    ✔ Using a locator (15.338614ms)
+  ✔ Eagerload (32.620482ms)
 
   ▶ Rejects
-    ✔ Lazyload a nonexistent path (3.149196ms)
-    ✔ Lazyload a nonexistent path (0.893349ms)
-    ✔ Directory path with no index or locator file (1.280318ms)
-    ✔ Invalid wildcard path (0.720293ms)
-    ✔ File path is used as a directory path (2.201317ms)
-    ✔ Missmatched wildcard count (0.585756ms)
-    ✔ Invalid service map types (1.048835ms)
-    ✔ Noneexisting path (1.978403ms)
-    ✔ Invalid wildcard path (2.568421ms)
-    ✔ Throws error for attempting to locate a nonexisting service (0.319932ms)
-  ✔ Rejects (15.415578ms)
+    ✔ Lazyload a nonexistent path (2.912138ms)
+    ✔ Lazyload a nonexistent path (0.656041ms)
+    ✔ Directory path with no index or locator file (1.361741ms)
+    ✔ Invalid wildcard path (0.780617ms)
+    ✔ File path is used as a directory path (0.621352ms)
+    ✔ Missmatched wildcard count (0.318685ms)
+    ✔ Invalid service map types (0.757284ms)
+    ✔ Noneexisting path (1.381143ms)
+    ✔ Invalid wildcard path (0.771358ms)
+    ✔ Throws error for attempting to locate a nonexisting service (2.242825ms)
+  ✔ Rejects (12.485229ms)
 
-  ▶ Destruct
-    ✔ Successfully destructs a service (3.725305ms)
-    ✔ Throws if a destructor of a service fails to destruct (2.483105ms)
-  ✔ Destruct (6.449439ms)
-  ✔ Locate using the locator method (1.057447ms)
-✔ @superhero/locator (84.717661ms)
+  ▶ Destroy
+    ✔ Successfully destroys a service (6.235913ms)
+    ✔ Throws if fails to destroy a service (2.991283ms)
+  ✔ Destroy (9.57427ms)
+
+  ✔ Locate using the locator method (0.7178ms)
+✔ @superhero/locator (85.230119ms)
 
 tests 26
 suites 6

@@ -98,19 +98,19 @@ export default class Locator extends Map
     await this.#iterateEagerload(expandedServiceMap)
   }
 
-  async destruct()
+  async destroy()
   {
-    const destructions = []
+    const destroyed = []
 
     for(const [ name, service ] of this.entries())
     {
-      if('function' === typeof service.destructor)
+      if('function' === typeof service.destroy)
       {
-        destructions.push((async () => 
+        destroyed.push((async () => 
         {
           try
           {
-            const result = await service.destructor()
+            const result = await service.destroy()
             return { name, result }
           }
           catch(reason)
@@ -121,19 +121,19 @@ export default class Locator extends Map
       }
     }
 
-    await this.#validateDestructions(destructions)
+    await this.#validateDestroyed(destroyed)
   }
 
-  async #validateDestructions(destructions)
+  async #validateDestroyed(destroyed)
   {
     const rejected = []
 
-    for(const { name, reason } of await Promise.all(destructions))
+    for(const { name, reason } of await Promise.all(destroyed))
     {
       if(reason)
       {
-        const error = new Error(`Destructor for service ${name} failed`)
-        error.code  = 'E_LOCATOR_DESTRUCT_SERVICE_DESTRUCTOR'
+        const error = new Error(`Failed to destroy service: ${name}`)
+        error.code  = 'E_LOCATOR_DESTROY_SERVICE'
         error.cause = reason
         rejected.push(error)
       }
@@ -141,8 +141,8 @@ export default class Locator extends Map
 
     if(rejected.length)
     {
-      const error = new Error(`Destructor for ${rejected.length}/${destructions.length} services was rejected`)
-      error.code  = 'E_LOCATOR_DESTRUCT'
+      const error = new Error(`Destroy for ${rejected.length}/${destroyed.length} services was rejected`)
+      error.code  = 'E_LOCATOR_DESTROY'
       error.cause = rejected
       throw error
     }

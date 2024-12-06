@@ -18,9 +18,9 @@ suite('@superhero/locator', () =>
     exportedLocateFunction  = `${locatorsDir}/example-exported-locate.js`,
     exportedLocatorClass    = `${locatorsDir}/example-exported-locator.js`,
     selfLocator             = `${locatorsDir}/example-self-locator.js`,
-    destructorsDir          = `${testDir}/destructors`,
-    destructorFileSuccess   = `${destructorsDir}/success.js`,
-    destructorFileFailing   = `${destructorsDir}/failing.js`
+    destroyDir              = `${testDir}/destroyers`,
+    destroyFileSuccess      = `${destroyDir}/success.js`,
+    destroyFileFailing      = `${destroyDir}/failing.js`
 
   let locate
 
@@ -30,7 +30,7 @@ suite('@superhero/locator', () =>
 
     await fs.mkdir(nestedServiceDir,  { recursive: true })
     await fs.mkdir(locatorsDir,       { recursive: true })
-    await fs.mkdir(destructorsDir,    { recursive: true })
+    await fs.mkdir(destroyDir,        { recursive: true })
 
     // Create mock service files
     await fs.writeFile(serviceFileA,            'export default {}')
@@ -41,8 +41,8 @@ suite('@superhero/locator', () =>
     await fs.writeFile(selfLocator,             'export default class Foo { static locate(locate) { return new Foo(locate("some-service")) } constructor(service) { this.service = service } }')
     await fs.writeFile(exportedLocatorClass,    'export class Locator { locate(locate) { return locate("some-service") } }')
     await fs.writeFile(exportedLocateFunction,  'export function locate(locate) { return locate("some-service") }')
-    await fs.writeFile(destructorFileSuccess,   'export default new class { destructor() { this.destructed = true } }')
-    await fs.writeFile(destructorFileFailing,   'export default new class { destructor() { throw new Error("Failed to destruct") } }')
+    await fs.writeFile(destroyFileSuccess,      'export default new class { destroy() { this.destroyed = true } }')
+    await fs.writeFile(destroyFileFailing,      'export default new class { destroy() { throw new Error("Failed to destroy") } }')
   })
 
   after(async () => 
@@ -318,22 +318,22 @@ suite('@superhero/locator', () =>
     })
   })
 
-  suite('Destruct', () =>
+  suite('Destroy', () =>
   {
-    test('Successfully destructs a service', async () => 
+    test('Successfully destroys a service', async () => 
     {
-      const service = await locate.lazyload(destructorFileSuccess)
-      await locate.destruct()
-      assert.ok(service.destructed, 'Should have destructed the service')
+      const service = await locate.lazyload(destroyFileSuccess)
+      await locate.destroy()
+      assert.ok(service.destroyed, 'Should have destroyed the service')
     })
   
-    test('Throws if a destructor of a service fails to destruct', async () => 
+    test('Throws if fails to destroy a service', async () => 
     {
-      await locate.eagerload(destructorFileFailing)
+      await locate.eagerload(destroyFileFailing)
       await assert.rejects(
-        () => locate.destruct(),
-        (error) => error.code === 'E_LOCATOR_DESTRUCT',
-        'Should reject with a destruct error')
+        () => locate.destroy(),
+        (error) => error.code === 'E_LOCATOR_DESTROY',
+        'Should reject with a destroy error')
     })
   })
 
