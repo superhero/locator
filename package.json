@@ -1,6 +1,6 @@
 {
   "name": "@superhero/locator",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "Service locator to locate services by defined locator patterns",
   "keywords": [
     "service manager",
@@ -14,7 +14,7 @@
     ".": "./index.js"
   },
   "dependencies": {
-    "@superhero/path-resolver": "^4.0.1",
+    "@superhero/path-resolver": "^4.0.2",
     "@superhero/log": "^4.0.0"
   },
   "scripts": {
