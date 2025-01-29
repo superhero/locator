@@ -1,5 +1,6 @@
 import fs           from 'node:fs/promises'
 import path         from 'node:path'
+import Config       from '@superhero/config'
 import Log          from '@superhero/log'
 import PathResolver from '@superhero/path-resolver'
 
@@ -7,6 +8,7 @@ export default class Locator extends Map
 {
   log          = new Log({ label:'[LOCATOR]' })
   pathResolver = new PathResolver()
+  config       = new Config(this.pathResolver)
   #locateProxy = new Proxy(() => {},
   {
     set             : (...arg) => this.set(arg[1], arg[2]),

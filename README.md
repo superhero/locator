@@ -39,7 +39,8 @@ const foobar2 = locator.locate('foobar');
 ### Eagerload Services
 
 ```javascript
-await locator.eagerload({
+await locator.eagerload(
+{
   serviceA: './services/serviceA.js',
   serviceB: './services/serviceB.js',
 });
@@ -62,7 +63,8 @@ Create custom locators to manage complex dependency trees.
 #### Example: Exported `locate` Function
 
 ```javascript
-export function locate(locator) {
+export function locate(locator) 
+{
   return { foobar: locator.locate('foobar') };
 }
 ```
@@ -70,8 +72,10 @@ export function locate(locator) {
 #### Example: Locator Class
 
 ```javascript
-export class Locator {
-  locate(locator) {
+export class Locator 
+{
+  locate(locator) 
+  {
     return { foobar: locator.locate('foobar') };
   }
 }
@@ -80,12 +84,15 @@ export class Locator {
 #### Example: Static Class `locate` Function
 
 ```javascript
-export default class Foo {
-  constructor(foobar) {
+export default class Foo 
+{
+  constructor(foobar) 
+  {
     this.foobar = foobar;
   }
 
-  static locate(locator) {
+  static locate(locator) 
+  {
     return new Foo(locator.locate('foobar'));
   }
 }
@@ -100,8 +107,10 @@ Services can include a `destroy` method to clean up resources during shutdown or
 Define a service with a `destroy` method:
 
 ```javascript
-export default new class {
-  destroy() {
+export default new class 
+{
+  destroy() 
+  {
     console.log('Service is being destroyed.');
   }
 }
@@ -110,7 +119,8 @@ export default new class {
 Destroy all loaded services:
 
 ```javascript
-await locator.eagerload({
+await locator.eagerload(
+{
   serviceA: './services/serviceA.js',
   serviceB: './services/serviceB.js',
 });
@@ -125,9 +135,12 @@ If a service's `destroy` method throws an error, the locator will aggregate thes
 Example:
 
 ```javascript
-try {
+try 
+{
   await locator.destroy();
-} catch (error) {
+} 
+catch (error) 
+{
   console.error(error.code); // 'E_LOCATOR_DESTROY'
   console.error(error.cause); // Array of errors for each service taht failed to destroy
 }
@@ -156,9 +169,12 @@ The module provides descriptive errors with unique codes to help debug common is
 Example:
 
 ```javascript
-try {
+try 
+{
   locator.locate('nonexistent/service');
-} catch (error) {
+} 
+catch (error) 
+{
   console.error(error.code, error.message);
 }
 ```
@@ -227,10 +243,10 @@ pass 26
 ----------------------------------------------------------------------------------------------------
 file            | line % | branch % | funcs % | uncovered lines
 ----------------------------------------------------------------------------------------------------
-index.js        |  94.42 |    94.34 |   76.67 | 25-27 47-50 331-333 459-463 477-480 494-499 515-518
+index.js        |  94.47 |    94.34 |   76.67 | 27-29 49-52 333-335 463-467 481-484 498-503 519-522
 index.test.js   | 100.00 |   100.00 |   98.00 | 
 ----------------------------------------------------------------------------------------------------
-all files       |  96.66 |    96.18 |   90.00 | 
+all files       |  96.67 |    96.18 |   90.00 | 
 ----------------------------------------------------------------------------------------------------
 ```
 
