@@ -120,7 +120,11 @@ export default class Locator extends Map
 
     for(const [ name, service ] of this.entries())
     {
-      if('function' === typeof service.destroy)
+      if(false === this.config.find(`destroy/${name}`, true))
+      {
+        this.log.info`automatic destroy disabled for ${name}`
+      }
+      else if('function' === typeof service.destroy)
       {
         destroyed.push((async () => 
         {
@@ -136,6 +140,10 @@ export default class Locator extends Map
             return { name, reason }
           }
         })())
+      }
+      else
+      {
+        this.log.info`no destroy method in ${name}`
       }
     }
 
