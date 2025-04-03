@@ -243,12 +243,11 @@ export default class Locator extends Map
     if(servicePath.startsWith('.'))
     {
       const 
-        configPath    = 'locator/' + serviceName,
+        configPath    = 'locator/' + serviceName.replaceAll('/', '\\/'),
         absolutePath  = this.config.findAbsoluteDirPathByConfigEntry(configPath, servicePath)
       
       if('string' === typeof absolutePath)
       {
-        this.log.info`service path "${servicePath}" resolved to "${absolutePath}"`
         servicePath = path.normalize(path.join(absolutePath, servicePath))
       }
       else
@@ -257,7 +256,7 @@ export default class Locator extends Map
       }
     }
 
-    const 
+    const
       splitName = serviceName.split('*'),
       splitPath = servicePath.split('*')
   
@@ -361,21 +360,32 @@ export default class Locator extends Map
   #isInvalidFile(filename, expectation)
   {
     // if a file ending is defined
-    if(expectation)
+    if(expectation 
+    && false === filename.endsWith(expectation))
     {
-      if(false === filename.endsWith(expectation))
-      {
-        // Skip this file if the real file ending does not match the expected file ending.
-        return true
-      }
+      // Skip this file if the real file ending does not match the expected file ending.
+      return true
     }
+
     // if no file ending is defined
-    else if(false === filename.endsWith('.js')
-         && false === filename.endsWith('.cjs')
-         && false === filename.endsWith('.mjs'))
+    if(false === filename.endsWith('.js')
+    && false === filename.endsWith('.cjs')
+    && false === filename.endsWith('.mjs'))
     {
       // Skip this file if the real file does not have a known javascript file ending.
       return true
+    }
+
+    for(const fileEnding of [ 'js', 'mjs', 'cjs' ])
+    {
+      for(const fileType of [ 'test', 'spec', 'unit', 'int', 'e2e', 'example', 'demo' ])
+      {
+        // Skip this file if the real file does not have a known javascript file ending.
+        if(filename.endsWith(`.${fileType}.${fileEnding}`))
+        {
+          return true
+        }
+      }
     }
   }
 
