@@ -108,7 +108,7 @@ export default class Locator extends Map
   async eagerload(serviceMap)
   {
     const
-      standardizedServiceMap  = this.normaliseServiceMap(serviceMap),
+      standardizedServiceMap  = this.#normaliseServiceMap(serviceMap),
       expandedServiceMap      = await this.#expandServiceMap(standardizedServiceMap)
 
     await this.#iterateEagerload(expandedServiceMap)
@@ -180,7 +180,7 @@ export default class Locator extends Map
    * @param {string|Array|Object} serviceMap
    * @returns 
    */
-  normaliseServiceMap(serviceMap)
+  #normaliseServiceMap(serviceMap)
   {
     const serviceMapType = Object.prototype.toString.call(serviceMap)
 
@@ -239,6 +239,23 @@ export default class Locator extends Map
 
   async #expandWildcards(expandedServiceMap, serviceName, servicePath) 
   {
+    // resolve the absolute path when a service defines a relative path
+    if(servicePath.startsWith('.'))
+    {
+      const 
+        configPath    = 'locator/' + serviceName,
+        absolutePath  = this.config.findAbsoluteDirPathByConfigEntry(configPath, servicePath)
+      
+      if('string' === typeof absolutePath)
+      {
+        serviceMap[entry] = path.normalize(path.join(absolutePath, servicePath))
+      }
+      else
+      {
+        servicePath = path.normalize(path.join(this.pathResolver.basePath, servicePath))
+      }
+    }
+
     const 
       splitName = serviceName.split('*'),
       splitPath = servicePath.split('*')
@@ -312,11 +329,6 @@ export default class Locator extends Map
   {
     try
     {
-      if(dirpath.startsWith('.'))
-      {
-        dirpath = path.normalize(path.join(this.pathResolver.basePath, dirpath))
-      }
-
       return await fs.readdir(dirpath, { withFileTypes })
     }
     catch(reason)
@@ -390,7 +402,10 @@ export default class Locator extends Map
           throw reason
         }
 
-        this.log.warn`failed to load ${serviceName} attempt ${attempt}`
+        if('E_LOCATOR_LOCATE' !== reason.cause?.code)
+        {
+          this.log.warn`failed to load ${serviceName} attempt ${attempt}`
+        }
 
         queuedServiceMap[serviceName] = expandedServiceMap[serviceName]
         resolveServicePathErrors.push(reason)
