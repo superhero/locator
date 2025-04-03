@@ -248,7 +248,8 @@ export default class Locator extends Map
       
       if('string' === typeof absolutePath)
       {
-        serviceMap[entry] = path.normalize(path.join(absolutePath, servicePath))
+        this.log.info`service path "${servicePath}" resolved to "${absolutePath}"`
+        servicePath = path.normalize(path.join(absolutePath, servicePath))
       }
       else
       {
