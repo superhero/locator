@@ -9,6 +9,7 @@ export default class Locator extends Map
   log          = new Log({ label:'[LOCATOR]' })
   pathResolver = new PathResolver()
   config       = new Config(this.pathResolver)
+  #priority    = new Map
   #locateProxy = new Proxy(() => {},
   {
     set             : (...arg) => this.set(arg[1], arg[2]),
@@ -47,7 +48,19 @@ export default class Locator extends Map
 
   delete(serviceName)
   {
+    for(const [ name, uses ] of this.#priority.entries())
+    {
+      if(uses.includes(serviceName))
+      {
+        const error = new Error(`Cannot delete prioritized service "${serviceName}"`)
+        error.code  = 'E_LOCATOR_DELETE'
+        error.cause = `Service "${serviceName}" is used by "${name}"`
+        throw error
+      }
+    }
+
     this.log.info`deleted ${serviceName}`
+    this.#priority.delete(serviceName)
     return super.delete(serviceName)
   }
 
@@ -82,7 +95,11 @@ export default class Locator extends Map
     {
       try
       {
-        await this.#resolveServicePath(servicePath ?? serviceName, serviceName)
+        const
+          path = servicePath ?? serviceName,
+          name = serviceName
+
+        await this.#resolveService({ name, path })
       }
       catch(reason)
       {
@@ -99,7 +116,7 @@ export default class Locator extends Map
   /**
    * Loads services from a service map.
    * 
-   * @param {string|Array|Object} serviceMap will be normalised to an object
+   * @param {string|Array|Object} serviceMap will be normalized to an object
    * 
    * @throws {E_LOCATOR_EAGERLOAD}
    * @throws {E_LOCATOR_INVALID_SERVICE_MAP}
@@ -108,62 +125,77 @@ export default class Locator extends Map
   async eagerload(serviceMap)
   {
     const
-      standardizedServiceMap  = this.#normaliseServiceMap(serviceMap),
-      expandedServiceMap      = await this.#expandServiceMap(standardizedServiceMap)
+      standardizedServiceMap  = this.#normalizeServiceMap(serviceMap),
+      serviceConfigs          = await this.#expandServiceMap(standardizedServiceMap)
 
-    await this.#iterateEagerload(expandedServiceMap)
+    await this.#iterateEagerload(serviceConfigs)
   }
 
   async destroy()
   {
-    const destroyed = []
-
-    for(const [ name, service ] of this.entries())
-    {
-      if(false === this.config.find(`destroy/${name}`, true))
-      {
-        this.log.warn`automatic destroy disabled for ${name}`
-      }
-      else if('function' === typeof service.destroy)
-      {
-        destroyed.push((async () => 
-        {
-          try
-          {
-            const result = await service.destroy()
-            this.log.warn`destroyed ${name}`
-            return { name, result }
-          }
-          catch(reason)
-          {
-            this.log.warn`failed to destroy ${name}`
-            return { name, reason }
-          }
-        })())
-      }
-    }
-
-    await this.#validateDestroyed(destroyed)
-  }
-
-  async #validateDestroyed(destroyed)
-  {
     const rejected = []
 
-    for(const { name, reason } of await Promise.all(destroyed))
+    while(this.size)
     {
-      if(reason)
+      const 
+        destroy   = [],
+        entries   = [ ...this.entries() ],
+        priority  = [ ...this.#priority.values() ].flat(),
+        filtered  = entries.filter(([ name ]) => false === priority.includes(name))
+
+      for(const [ name, service ] of filtered)
       {
-        const error = new Error(`Failed to destroy service: ${name}`)
-        error.code  = 'E_LOCATOR_DESTROY_SERVICE'
-        error.cause = reason
-        rejected.push(error)
+        if(false === this.config.find(`destroy/${name}`, true))
+        {
+          this.log.warn`disabled "destroy" for service ${name}`
+
+          this.delete(name)
+          this.#priority.delete(name)
+        }
+        else if('function' === typeof service.destroy)
+        {
+          destroy.push((async () => 
+          {
+            try
+            {
+              const result = await service.destroy()
+              this.log.info`destroyed ${name}`
+              return { name, result }
+            }
+            catch(reason)
+            {
+              this.log.warn`failed to destroy ${name}`
+              return { name, reason }
+            }
+            finally
+            {
+              this.delete(name)
+              this.#priority.delete(name)
+            }
+          })())
+        }
+        else
+        {
+          this.delete(name)
+          this.#priority.delete(name)
+        }
+      }
+
+      for(const { name, reason } of await Promise.all(destroy))
+      {
+        if(reason)
+        {
+          const error = new Error(`Failed to destroy service: ${name}`)
+          error.code  = 'E_LOCATOR_DESTROY_SERVICE'
+          error.cause = reason
+          rejected.push(error)
+        }
       }
     }
 
     if(rejected.length)
     {
-      const error = new Error(`Destroy for ${rejected.length}/${destroyed.length} services was rejected`)
+      const error = new Error(`Destroy for ${rejected.length} services was rejected`)
       error.code  = 'E_LOCATOR_DESTROY'
       error.cause = rejected
       throw error
@@ -171,12 +203,12 @@ export default class Locator extends Map
   }
 
   /**
-   * Normalises the service map to an object if it's a string or an array.
+   * normalizes the service map to an object if it's a string or an array.
    * 
    * @param {string|Array|Object} serviceMap
    * @returns 
    */
-  #normaliseServiceMap(serviceMap)
+  #normalizeServiceMap(serviceMap)
   {
     const serviceMapType = Object.prototype.toString.call(serviceMap)
 
@@ -188,6 +220,7 @@ export default class Locator extends Map
       }
       case '[object Array]':
       {
+        // TODO: validate that each item in the array is a string
         return serviceMap.reduce((accumulator, service) => Object.assign(accumulator, { [service]:true }), {})
       }
       case '[object String]':
@@ -196,12 +229,57 @@ export default class Locator extends Map
       }
       default:
       {
-        const error = new TypeError('Service map must be of type [object Object], or a string or array that can be normalised to an object')
+        const error = new TypeError('Service map must be of type [object Object], or a string or array that can be normalized to an object')
         error.code  = 'E_LOCATOR_INVALID_SERVICE_MAP'
         error.cause = new TypeError(`Invalid service map type "${serviceMapType}"`)
         throw error
       }
     }
+  }
+
+  #normalizeServiceConf(serviceName, serviceConf)
+  {
+    const 
+      normalized      = { name:serviceName, uses:[] },
+      serviceConfType = Object.prototype.toString.call(serviceConf)
+
+    switch(serviceConfType)
+    {
+      case '[object Boolean]':
+      {
+        normalized.path = serviceName
+        break
+      }
+      case '[object String]':
+      {
+        normalized.path = serviceConf
+        break
+      }
+      case '[object Array]':
+      {
+        normalized.path = serviceName
+        for(const uses of serviceConf)
+        {
+          normalized.uses.push(uses)
+        }
+        break
+      }
+      case '[object Object]':
+      {
+        normalized.path = serviceConf.path ?? serviceName
+        normalized.uses = serviceConf.uses ?? []
+        break
+      }
+      default:
+      {
+        const error = new TypeError(`Invalid service configuration for "${serviceName}"`)
+        error.code  = 'E_LOCATOR_INVALID_SERVICE_CONFIG'
+        error.cause = new TypeError(`Invalid service configuration type "${serviceConfType}"`)
+        throw error
+      }
+    }
+
+    return normalized
   }
 
   /**
@@ -213,33 +291,27 @@ export default class Locator extends Map
    */
   async #expandServiceMap(serviceMap)
   {
-    const expandedServiceMap = {}
+    const serviceConfigs = []
 
-    for(const [serviceName, servicePath] of Object.entries(serviceMap))
+    for(const [serviceName, serviceConf] of Object.entries(serviceMap))
     {
-      if(servicePath)
+      if(serviceConf)
       {
-        if(true === servicePath)
-        {
-          await this.#expandWildcards(expandedServiceMap, serviceName, serviceName)
-        }
-        else
-        {
-          await this.#expandWildcards(expandedServiceMap, serviceName, servicePath)
-        }
+        const serviceConfig = this.#normalizeServiceConf(serviceName, serviceConf)
+        serviceConfig.path  = this.#normalizeServicePath(serviceConfig.path)
+        await this.#expandServiceWildcards(serviceConfigs, serviceConfig)
       }
     }
 
-    return expandedServiceMap
+    return serviceConfigs
   }
 
-  async #expandWildcards(expandedServiceMap, serviceName, servicePath) 
+  #normalizeServicePath(servicePath)
   {
-    // resolve the absolute path when a service defines a relative path
     if(servicePath.startsWith('.'))
     {
-      const 
-        configPath    = 'locator/' + serviceName.replaceAll('/', '\\/'),
+      const
+        configPath    = 'locator/' + servicePath.replaceAll('/', '\\/'),
         absolutePath  = this.config.findAbsoluteDirPathByConfigEntry(configPath, servicePath)
       
       if('string' === typeof absolutePath)
@@ -252,39 +324,48 @@ export default class Locator extends Map
       }
     }
 
+    return servicePath
+  }
+
+  async #expandServiceWildcards(serviceConfigs, serviceConf) 
+  {
     const
-      splitName = serviceName.split('*'),
-      splitPath = servicePath.split('*')
-  
+      splitName = serviceConf.name.split('*'),
+      splitPath = serviceConf.path.split('*')
+
     if(splitName.length !== splitPath.length) 
     {
-      const error = new Error(`Invalid wildcard specification for service name "${serviceName}" path "${servicePath}"`)
+      const error = new Error(`Invalid wildcard specification for service name "${serviceConf.name}" path "${serviceConf.path}"`)
       error.code  = 'E_LOCATOR_INVALID_PATH'
-      error.cause = `Expecting the wildcard count in the service name and path to be the same amount`
+      error.cause = `Expecting the wildcard count in the service name and service path to be the same amount`
       throw error
     }
 
-    const expandedServiceMapLength = Object.keys(expandedServiceMap).length
-
-    await this.#iterateWildcards(expandedServiceMap, splitName[0], splitPath[0], splitName, splitPath, 0)
-
-    if(Object.keys(expandedServiceMap).length === expandedServiceMapLength)
+    const initServiceConfigsLength = serviceConfigs.length
+    await this.#expandServiceWildcardsIterater(serviceConfigs, serviceConf.uses, splitName[0], splitPath[0], splitName, splitPath)
+    if(serviceConfigs.length === initServiceConfigsLength)
     {
-      const error = new Error(`Could not find any service for "${serviceName}" path "${servicePath}"`)
+      const error = new Error(`Could not find any service for "${serviceConf.name}" path "${serviceConf.path}"`)
       error.code  = 'E_LOCATOR_INVALID_PATH'
       throw error
     }
   }
 
-  async #iterateWildcards(expandedServiceMap, partialName, partialPath, splitName, splitPath, depth)
+  async #expandServiceWildcardsIterater(serviceConfigs, uses, partialName, partialPath, splitName, splitPath, depth = 1)
   {
-    if (++depth === splitName.length)
+    if(depth === splitName.length)
     {
-      expandedServiceMap[partialName] = partialPath
+      serviceConfigs.push(
+      {
+        name:partialName,
+        path:partialPath,
+        uses
+      })
     }
     else
     {
-      for (const dirent of await this.#readDirentsByPath(partialPath, true))
+      const dirents = await this.#readDirentsByPath(partialPath, true)
+      for(const dirent of dirents)
       {
         let currentName, currentPath
 
@@ -315,8 +396,8 @@ export default class Locator extends Map
           // Skip this file if it does not match any expected file or directory.
           continue
         }
-  
-        await this.#iterateWildcards(expandedServiceMap, currentName, currentPath, splitName, splitPath, depth)
+
+        await this.#expandServiceWildcardsIterater(serviceConfigs, uses, currentName, currentPath, splitName, splitPath, depth + 1)
       }
     }
   }
@@ -385,22 +466,28 @@ export default class Locator extends Map
     }
   }
 
-  async #iterateEagerload(expandedServiceMap, attempt = 1)
+  async #iterateEagerload(serviceConfigs, attempt = 1)
   {
     const
-      queuedServiceMap          = {},
+      queuedServiceConfigs      = [],
       resolveServicePathErrors  = []
 
-    for(const [ serviceName, servicePath ] of Object.entries(expandedServiceMap))
+    for(const { name, path, uses } of serviceConfigs)
     {
-      if(this.has(serviceName))
+      if(this.has(name))
+      {
+        continue
+      }
+
+      if(false === uses.every(uses => this.has(uses)))
       {
         continue
       }
 
       try
       {
-        await this.#resolveServicePath(servicePath, serviceName)
+        await this.#resolveService({ name, path })
+        uses.length && this.#priority.set(name, uses)
       }
       catch(reason)
       {
@@ -411,15 +498,15 @@ export default class Locator extends Map
 
         if('E_LOCATOR_LOCATE' !== reason.cause?.code)
         {
-          this.log.warn`failed to load ${serviceName} attempt ${attempt}`
+          this.log.warn`failed to load ${name} attempt ${attempt}`
         }
 
-        queuedServiceMap[serviceName] = expandedServiceMap[serviceName]
+        queuedServiceConfigs.push({ name, path, uses })
         resolveServicePathErrors.push(reason)
     
         // If all services have failed to resolve, then it's not possible to solve 
         // the service map through further iterations.
-        if(Object.keys(expandedServiceMap).length === resolveServicePathErrors.length)
+        if(serviceConfigs.length === resolveServicePathErrors.length)
         {
           const error = new Error(`Could not resolve service map`)
           error.code  = 'E_LOCATOR_EAGERLOAD'
@@ -434,26 +521,26 @@ export default class Locator extends Map
       // If there are still services that have not been resolved, then we need to
       // iterate the eagerload process again because some services may not have been 
       // able to resolve due to unresolved dependencies that now have been resolved.
-      await this.#iterateEagerload(queuedServiceMap, ++attempt)
+      await this.#iterateEagerload(queuedServiceConfigs, attempt + 1)
     }
   }
 
-  async #resolveServicePath(servicePath, serviceName)
+  async #resolveService({ name, path })
   {
     const
-      resolveFile       = this.#resolveFile.bind(this),
-      resolveDirectory  = this.#resolveDirectory.bind(this),
-      service           = await this.pathResolver.resolve(servicePath, resolveFile, resolveDirectory)
+      callbackFile  = this.#resolveFile.bind(this),
+      callbackDir   = this.#resolveDirectory.bind(this),
+      service       = await this.pathResolver.resolve(path, callbackFile, callbackDir)
 
     if(service)
     {
-      this.set(serviceName, service)
+      this.set(name, service)
     }
     else
     {
-      const error = new TypeError(`Could not resolve service named "${serviceName}"`)
+      const error = new TypeError(`Could not resolve service named "${name}"`)
       error.code  = 'E_LOCATOR_SERVICE_UNRESOLVABLE'
-      error.cause = new TypeError(`Service path "${servicePath}" is unresolvable`)
+      error.cause = `Service path "${path}" is unresolvable`
       throw error
     }
   }

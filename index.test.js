@@ -121,9 +121,9 @@ suite('@superhero/locator', () =>
   
     test('Specific file by a wildcard service path map', async () => 
     {
-      const serviceMap = { 'foobar/*': servicesDir + '/*' }
+      const serviceMap = { 'foobar/*': servicesDir + '/*.js' }
       await locate.eagerload(serviceMap)
-      assert.ok(locate('foobar/serviceA.js'), 'Should be able to locate by the specific file name')
+      assert.ok(locate('foobar/serviceA'), 'Should be able to locate by the specific file name')
     })
 
     suite('Using a locator', () =>
