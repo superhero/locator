@@ -298,7 +298,7 @@ export default class Locator extends Map
       if(serviceConf)
       {
         const serviceConfig = this.#normalizeServiceConf(serviceName, serviceConf)
-        serviceConfig.path  = this.#normalizeServicePath(serviceConfig.path)
+        serviceConfig.path  = this.#normalizeServicePath(serviceConfig.name, serviceConfig.path)
         await this.#expandServiceWildcards(serviceConfigs, serviceConfig)
       }
     }
@@ -306,12 +306,12 @@ export default class Locator extends Map
     return serviceConfigs
   }
 
-  #normalizeServicePath(servicePath)
+  #normalizeServicePath(serviceName, servicePath)
   {
     if(servicePath.startsWith('.'))
     {
       const
-        configPath    = 'locator/' + servicePath.replaceAll('/', '\\/'),
+        configPath    = 'locator/' + serviceName.replaceAll('/', '\\/'),
         absolutePath  = this.config.findAbsoluteDirPathByConfigEntry(configPath, servicePath)
       
       if('string' === typeof absolutePath)
