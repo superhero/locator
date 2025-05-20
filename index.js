@@ -548,7 +548,7 @@ export default class Locator extends Map
   async #resolveFile(filepath)
   {
     const imported = await import(filepath)
-    return this.#resolveLocator(imported)
+    return await this.#resolveLocator(imported)
   }
 
   async #resolveDirectory(dirpath)
@@ -564,12 +564,12 @@ export default class Locator extends Map
           filepath = path.join(dirpath, file),
           imported = await import(filepath)
 
-        return this.#resolveLocator(imported)
+        return await this.#resolveLocator(imported)
       }
     }
   }
 
-  #resolveLocator(imported)
+  async #resolveLocator(imported)
   {
     if('function' === typeof imported.locate)
     {
@@ -586,7 +586,7 @@ export default class Locator extends Map
       // If the imported module has an exported locate method, then we assume 
       // that it's a service locator, and we call the locate method with this 
       // locator as argument.
-      return imported.locate(this.#locateProxy)
+      return await imported.locate(this.#locateProxy)
     }
 
     // If the imported module has a locator property, then we assume that 
@@ -597,7 +597,7 @@ export default class Locator extends Map
       {
         // If the imported module has a locator property with a locate method, 
         // then we assume that it's a service locator.
-        return imported.Locator.locate(this.#locateProxy)
+        return await imported.Locator.locate(this.#locateProxy)
       }
 
       if('function' === typeof imported.Locator
@@ -610,7 +610,7 @@ export default class Locator extends Map
         // a service locator. We instanciate the class, and then call the locate 
         // method on the instance with this locator as the argument.
         const locator = new imported.Locator()
-        return locator.locate(this.#locateProxy)
+        return await locator.locate(this.#locateProxy)
       }
 
       const error = new TypeError('Unresolvable exported "Locator" property')
@@ -625,7 +625,7 @@ export default class Locator extends Map
       {
         // If the imported default module has a locate method, then we assume that it's
         // a service locator.
-        return imported.default.locate(this.#locateProxy)
+        return await imported.default.locate(this.#locateProxy)
       }
 
       // If the imported module can not be resolved as a service locator, and there is 
