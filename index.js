@@ -479,13 +479,21 @@ export default class Locator extends Map
         continue
       }
 
-      if(false === uses.every(uses => this.has(uses)))
-      {
-        continue
-      }
-
       try
       {
+        // If the service has declared it is using other services, then we check to see if those
+        // services have already been loaded. If not, then we throw a "locator priority error" and 
+        // continue to the next service without attempting to load this service.
+        for(const using of uses)
+        {
+          if(false === this.has(using))
+          {
+            const error = new Error(`Service "${name}" is using "${using}" which has not yet been loaded`)
+            error.code  = 'E_LOCATOR_SERVICE_PRIORITY'
+            throw error
+          }
+        }
+
         await this.#resolveService({ name, path })
         uses.length && this.#priority.set(name, uses)
       }
@@ -503,20 +511,37 @@ export default class Locator extends Map
 
         queuedServiceConfigs.push({ name, path, uses })
         resolveServicePathErrors.push(reason)
-    
-        // If all services have failed to resolve, then it's not possible to solve 
-        // the service map through further iterations.
-        if(serviceConfigs.length === resolveServicePathErrors.length)
-        {
-          const error = new Error(`Could not resolve service map`)
-          error.code  = 'E_LOCATOR_EAGERLOAD'
-          error.cause = resolveServicePathErrors
-          throw error
-        }
       }
     }
 
-    if(resolveServicePathErrors.length)
+    // If all services have failed to resolve, then it's not possible to solve 
+    // the service map through further iterations.
+    if(resolveServicePathErrors.length 
+    && resolveServicePathErrors.length === serviceConfigs.length)
+    {
+      const error = new Error(`Could not resolve service map`)
+      error.code  = 'E_LOCATOR_EAGERLOAD'
+      error.cause = resolveServicePathErrors
+      throw error
+    }
+
+    // If we have tried to resolve the service map more than 1000 times (hardcoded unreasnable 
+    // large number), then we throw an error, because it doesn't seem to be possible to 
+    // resolve the service map.
+    // This is a safety measure to prevent infinite loops....
+    if(attempt >= 1e3)
+    {
+      const error = new Error(`Could not resolve service map after ${attempt} attempts`)
+      error.code  = 'E_LOCATOR_EAGERLOAD'
+      error.cause = resolveServicePathErrors
+      throw error
+    }
+
+    // If there are still services that have not been resolved, then we need to
+    // iterate the eagerload process again because some services may not have been
+    // able to resolve due to unresolved dependencies that now have been resolved.
+    // We do this until all services have been resolved...
+    if(queuedServiceConfigs.length)
     {
       // If there are still services that have not been resolved, then we need to
       // iterate the eagerload process again because some services may not have been 
