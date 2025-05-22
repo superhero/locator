@@ -312,7 +312,7 @@ export default class Locator extends Map
     {
       const
         configPath    = 'locator/' + serviceName.replaceAll('/', '\\/'),
-        absolutePath  = this.config.findAbsoluteDirPathByConfigEntry(configPath, servicePath)
+        absolutePath  = this.config.findAbsoluteDirPathByConfigPath(configPath)
       
       if('string' === typeof absolutePath)
       {
