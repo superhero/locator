@@ -1,6 +1,6 @@
 {
   "name": "@superhero/locator",
-  "version": "4.7.0",
+  "version": "4.7.1",
   "description": "Service locator to locate services by defined locator patterns",
   "keywords": [
     "service manager",
@@ -18,11 +18,11 @@
     "test": "syntax-check; node --test --test-reporter=@superhero/audit/reporter --experimental-test-coverage"
   },
   "dependencies": {
-    "@superhero/config": "4.7.0",
-    "@superhero/log": "4.7.0"
+    "@superhero/config": "4.7.1",
+    "@superhero/log": "4.7.1"
   },
   "devDependencies": {
-    "@superhero/audit": "4.7.0",
+    "@superhero/audit": "4.7.1",
     "@superhero/syntax-check": "0.0.2"
   },
   "author": {
