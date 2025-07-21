@@ -13,6 +13,9 @@
   "exports": {
     ".": "./index.js"
   },
+  "imports": {
+    "#loader": "./loader.js"
+  },
   "scripts": {
     "syntax-check": "syntax-check",
     "test": "syntax-check; node --test --test-reporter=@superhero/audit/reporter --experimental-test-coverage"
