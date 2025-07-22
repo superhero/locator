@@ -1,4 +1,10 @@
 ---
+#### v4.7.13
+---
+
+Seperated the component into 2 seperate classes, one for 'loading' to keep the facade implementation less cluttered.
+
+---
 #### v4.7.12
 ---
 
